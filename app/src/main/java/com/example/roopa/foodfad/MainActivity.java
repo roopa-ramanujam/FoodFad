@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.NumberPicker;
 import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
@@ -56,12 +57,15 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
     public static final String EXTRA_MESSAGE = "com.example.myfirstapp.MESSAGE";
+    private static File currentPicFile;
     private static TextView mTextView;
     private static Button mCameraButton;
     private static Button mButton;
     private static Button mGraphsButton;
+    private static Button mNutritionReport;
     private static ImageView mImageView;
     private static ImageView mImageViewJPG;
+    private static NumberPicker np;
     private int numberOfEntries;
     private String tagMostLikely = "";
     private ArrayList<Integer> itemsCals = new ArrayList<>();
@@ -69,12 +73,29 @@ public class MainActivity extends AppCompatActivity {
     //    private LineGraphSeries<DataPoint> series = new LineGraphSeries<>();
     //private GraphView graph;
 
-    private TextView textView8;
-    private TextView textViewCals;
+    private TextView Item;
+    private TextView Calories;
+    private TextView Carbs;
+    private TextView Protein;
+    private TextView Fat;
+    private TextView FoodGroup;
+    private String itemName = "";
     private int itemCalories = 0;
+    private int itemCarbs = 0;
+    private int itemProtein = 0;
+    private int itemFat = 0;
+
+    private String itemCaloriesString = "";
+    private String itemCarbsString = "";
+    private String itemProteinString = "";
+    private String itemFatString = "";
+
+    private String itemFoodGroup = "";
 
     private int dailyCalories = 0;
     private int dailyCaloriesGoal = 2000;
+
+    private int servingSize = 1;
 
     public AppDatabase db;
     @Override
@@ -115,30 +136,30 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void testdb() {
-
-        NutritionInfo newItem = new NutritionInfo();
-
-        Date date = new Date();
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); //Or whatever format fits best your needs.
-        String dateStr = sdf.format(date);
+//    private void testdb() {
 //
-//        java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(now.getTime());
+//        NutritionInfo newItem = new NutritionInfo();
+//
+//        Date date = new Date();
+//
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); //Or whatever format fits best your needs.
+//        String dateStr = sdf.format(date);
+////
+////        java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(now.getTime());
+//
+//        newItem.setTimestamp(dateStr);
+////        newItem.setId(3);
+//        newItem.setCalories(100);
+//        newItem.setCarbohydrates(10);
+//        newItem.setFat(2);
+//        newItem.setProtein(3);
+//        newItem.setFoodgroup("");
+//        db.nutritionInfoDao().insertNewEntry(newItem);
+//        int a = 6;
+//    }
 
-        newItem.setTimestamp(dateStr);
-//        newItem.setId(3);
-        newItem.setCalories(100);
-        newItem.setCarbohydrates(10);
-        newItem.setFat(2);
-        newItem.setProtein(3);
-        newItem.setFoodgroup("");
-        db.nutritionInfoDao().insertNewEntry(newItem);
-        int a = 6;
-    }
 
-
-    private void sendClarifaiRequest() {
+    private void sendClarifaiRequest(File file) {
         String APIKEY = "e14859a3ccae40a095a45a2fde6c8d57";
         final ClarifaiClient client = new ClarifaiBuilder(APIKEY).buildSync();
 
@@ -146,9 +167,9 @@ public class MainActivity extends AppCompatActivity {
         Model<Concept> generalModel = client.getDefaultModels().foodModel();
 
         PredictRequest<Concept> request = generalModel.predict().withInputs(
-                ClarifaiInput.forImage("http://juliandance.org/wp-content/uploads/2016/01/RedApple.jpg")
-        );
-        //ClarifaiRequest.OnFailure onFailure = null;
+                ClarifaiInput.forImage(new File(file.getAbsolutePath()))
+        );            //ClarifaiRequest.OnFailure onFailure = null;
+
         request.executeAsync(onSuccess);
     }
     private void initVars() {
@@ -156,24 +177,21 @@ public class MainActivity extends AppCompatActivity {
         mCameraButton = (Button) findViewById(R.id.camera_button);
         mButton = (Button) findViewById(R.id.button);
         mGraphsButton = (Button) findViewById(R.id.seeGraphsButton);
-        //mImageView = (ImageView) findViewById(R.id.photo);
-//        graph = (GraphView) findViewById(R.id.graph);
-//        graph.getViewport().setMinX(1);
-//        graph.getViewport().setMaxX(50);
-//        graph.getViewport().setMinY(0);
-//        graph.getViewport().setMaxY(500);
-//        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-//        SharedPreferences.Editor editor = preferences.edit();
-//        editor.putInt("number_entries", 1); // value to store
-//        editor.commit();
-        //mydatabase = openOrCreateDatabase("nutrition tracker",MODE_PRIVATE,null);
-
+        mNutritionReport = (Button) findViewById(R.id.NutritionReport);
+        mImageView = (ImageView) findViewById(R.id.photo);
+        np = (NumberPicker) findViewById(R.id.np);
+        np.setMinValue(1);
+        //Specify the maximum value/number of NumberPicker
+        np.setMaxValue(10);
+        np.setWrapSelectorWheel(true);
         numberOfEntries = 0;
 
-        //graph.setVisibility(View.GONE);
-        //graph.setVisibility(View.INVISIBLE);
-//        textView8 = (TextView) findViewById(R.id.textView13);
-//        textViewCals = (TextView) findViewById(R.id.textView15);
+        Item = (TextView) findViewById(R.id.Item);
+        Calories = (TextView) findViewById(R.id.Calories);
+        Carbs = (TextView) findViewById(R.id.Carbs);
+        Protein = (TextView) findViewById(R.id.Protein);
+        Fat = (TextView) findViewById(R.id.Fat);
+        FoodGroup = (TextView) findViewById(R.id.FoodGroup);
     }
 
     private void handleNewActivity() {
@@ -198,28 +216,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             if (tagMostLikely != "") {
-//                OkHttpClient client = new OkHttpClient();
-//                String usdaAPI = "R9oOFUARnDJIfMT0g9f5gzhYAtnXQDzkRlzy1sYV";
-//                String url = "https://api.nal.usda.gov/ndb/search/?format=json&q=" + tagMostLikely + "&sort=n&max=25&offset=0&api_key=" + usdaAPI;
-//                Request request = new Request.Builder()
-//                        .url(url)
-//                        .build();
-//                Response resp;
-//                try {
-//                    resp = client.newCall(request).execute();
-//                    String Response = resp.body().string();
-//                    int a = 5;
-//                    JSONObject jsonObject = new JSONObject(Response);
-//
-//                    String[] arr = (String[])jsonObject.get("item");
-//                    int b = 6;
-//
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-
                 OkHttpClient client = new OkHttpClient();
                 JSONObject obj = new JSONObject();
                 try {
@@ -248,19 +244,24 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject jsonObject = new JSONObject(Response);
                     JSONObject nutritionInfo = (JSONObject) jsonObject.getJSONArray("foods").get(0);
                     int calories = nutritionInfo.getInt("nf_calories");
-                    itemCalories = calories;
-                    dailyCalories += itemCalories;
+
                     int carbs = nutritionInfo.getInt("nf_total_carbohydrate");
                     int fat = nutritionInfo.getInt("nf_total_fat");
                     int protein = nutritionInfo.getInt("nf_protein");
-                    String foodgroup = "";
+                    itemCalories = calories * servingSize;
+                    itemCarbs = carbs * servingSize;
+                    itemFat = fat * servingSize;
+                    itemProtein = protein * servingSize;
 
-//                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-//                    SharedPreferences.Editor editor = preferences.edit();
-//                    editor.putInt("number_entries",numberOfEntries++);
-//                    editor.apply();
-                    itemsCals.add(calories);
-                    itemsCarbs.add(carbs);
+                    itemCaloriesString = itemCalories + "";
+                    itemCarbsString = itemCarbs + " g";
+                    itemFatString = itemFat + " g";
+                    itemProteinString = itemProtein + " g";
+
+                    String foodgroup = "";
+                    dailyCalories += itemCalories;
+                    itemsCals.add(itemCalories);
+                    itemsCarbs.add(itemCarbs);
 
                     // INSERT INTO DB
                     NutritionInfo newItem = new NutritionInfo();
@@ -269,15 +270,12 @@ public class MainActivity extends AppCompatActivity {
 
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); //Or whatever format fits best your needs.
                     String dateStr = sdf.format(date);
-//
-//        java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(now.getTime());
 
                     newItem.setTimestamp(dateStr);
-//        newItem.setId(3);
-                    newItem.setCalories(calories);
-                    newItem.setCarbohydrates(carbs);
-                    newItem.setFat(fat);
-                    newItem.setProtein(protein);
+                    newItem.setCalories(itemCalories);
+                    newItem.setCarbohydrates(itemCarbs);
+                    newItem.setFat(itemFat);
+                    newItem.setProtein(itemProtein);
                     newItem.setFoodgroup(foodgroup);
                     db.nutritionInfoDao().insertNewEntry(newItem);
 
@@ -289,6 +287,8 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
+
+            //displayNutritionInfo();
         }
     };
 
@@ -305,10 +305,21 @@ public class MainActivity extends AppCompatActivity {
         mButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateItems();
+                analyze();
             }
         });
 
+        mNutritionReport.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Item.setText(tagMostLikely);
+                Calories.setText(itemCaloriesString);
+                Carbs.setText(itemCarbsString);
+                Fat.setText(itemFatString);
+                Protein.setText(itemProteinString);
+                FoodGroup.setText(itemFoodGroup);
+            }
+        });
         mGraphsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -316,13 +327,29 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        np.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal){
+                //Display the newly selected number from picker
+                servingSize = newVal;
+            }
+        });
+
 
     }
 
-    private void updateItems() {
-//        textView8.setText(tagMostLikely);
-//        String itemCaloriesString = "" + itemCalories;
-//        textViewCals.setText(itemCaloriesString);
+    private void analyze() {
+        sendClarifaiRequest(currentPicFile);
+    }
+
+    private void displayNutritionInfo() {
+        //sendClarifaiRequest(currentPicFile);
+        Item.setText(tagMostLikely);
+        Calories.setText(itemCalories + " g");
+        Carbs.setText(itemCarbs + " g");
+        Fat.setText(itemFat + " g");
+        Protein.setText(itemProtein + " g");
+        FoodGroup.setText(itemFoodGroup);
     }
 
     static final int REQUEST_TAKE_PHOTO = 1;
@@ -336,7 +363,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
-            //mImageView.setImageBitmap(imageBitmap);
+            mImageView.setImageBitmap(imageBitmap);
 
             String extStorageDirectory = Environment.getExternalStorageDirectory().getAbsolutePath().toString();
             OutputStream outStream = null;
@@ -360,18 +387,19 @@ public class MainActivity extends AppCompatActivity {
             }
 
             Uri savedImageURI = Uri.parse(file.getAbsolutePath());
-
-            String APIKEY = "e14859a3ccae40a095a45a2fde6c8d57";
-            final ClarifaiClient client = new ClarifaiBuilder(APIKEY).buildSync();
-
-
-            Model<Concept> generalModel = client.getDefaultModels().foodModel();
-
-            PredictRequest<Concept> request = generalModel.predict().withInputs(
-                    ClarifaiInput.forImage(new File(file.getAbsolutePath()))
-            );
-            //ClarifaiRequest.OnFailure onFailure = null;
-            request.executeAsync(onSuccess);
+            currentPicFile = file;
+            //sendClarifaiRequest(currentPicFile);
+//            String APIKEY = "e14859a3ccae40a095a45a2fde6c8d57";
+//            final ClarifaiClient client = new ClarifaiBuilder(APIKEY).buildSync();
+//
+//
+//            Model<Concept> generalModel = client.getDefaultModels().foodModel();
+//
+//            PredictRequest<Concept> request = generalModel.predict().withInputs(
+//                    ClarifaiInput.forImage(new File(file.getAbsolutePath()))
+//            );            //ClarifaiRequest.OnFailure onFailure = null;
+//
+//            request.executeAsync(onSuccess);
         }
     }
 
