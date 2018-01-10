@@ -78,19 +78,22 @@ public class MainActivity extends AppCompatActivity {
     private TextView Carbs;
     private TextView Protein;
     private TextView Fat;
-    private TextView FoodGroup;
+    private TextView Sodium;
+    private TextView Sugar;
     private String itemName = "";
     private int itemCalories = 0;
     private int itemCarbs = 0;
     private int itemProtein = 0;
     private int itemFat = 0;
+    private int itemSodium = 0;
+    private int itemSugar = 0;
 
     private String itemCaloriesString = "";
     private String itemCarbsString = "";
     private String itemProteinString = "";
     private String itemFatString = "";
-
-    private String itemFoodGroup = "";
+    private String itemSodiumString = "";
+    private String itemSugarString = "";
 
     private int dailyCalories = 0;
     private int dailyCaloriesGoal = 2000;
@@ -191,14 +194,14 @@ public class MainActivity extends AppCompatActivity {
         Carbs = (TextView) findViewById(R.id.Carbs);
         Protein = (TextView) findViewById(R.id.Protein);
         Fat = (TextView) findViewById(R.id.Fat);
-        FoodGroup = (TextView) findViewById(R.id.FoodGroup);
+        Sodium = (TextView) findViewById(R.id.Sodium);
+        Sugar = (TextView) findViewById(R.id.Sugar);
     }
 
     private void handleNewActivity() {
         Intent myIntent  = new Intent(this, LongTermVisuals.class);
         startActivity(myIntent);
     }
-
 
 
     ClarifaiRequest.OnSuccess<List<ClarifaiOutput<Concept>>> onSuccess = new ClarifaiRequest.OnSuccess<List<ClarifaiOutput<Concept>>>() {
@@ -244,19 +247,24 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject jsonObject = new JSONObject(Response);
                     JSONObject nutritionInfo = (JSONObject) jsonObject.getJSONArray("foods").get(0);
                     int calories = nutritionInfo.getInt("nf_calories");
-
                     int carbs = nutritionInfo.getInt("nf_total_carbohydrate");
                     int fat = nutritionInfo.getInt("nf_total_fat");
                     int protein = nutritionInfo.getInt("nf_protein");
+                    int sugar = nutritionInfo.getInt("nf_sugars");
+                    int sodium = nutritionInfo.getInt("nf_sodium");
                     itemCalories = calories * servingSize;
                     itemCarbs = carbs * servingSize;
                     itemFat = fat * servingSize;
                     itemProtein = protein * servingSize;
+                    itemSodium = sodium;
+                    itemSugar = sugar;
 
                     itemCaloriesString = itemCalories + "";
                     itemCarbsString = itemCarbs + " g";
                     itemFatString = itemFat + " g";
                     itemProteinString = itemProtein + " g";
+                    itemSodiumString = itemSodium + " mg";
+                    itemSugarString = itemSugar + " g";
 
                     String foodgroup = "";
                     dailyCalories += itemCalories;
@@ -317,7 +325,8 @@ public class MainActivity extends AppCompatActivity {
                 Carbs.setText(itemCarbsString);
                 Fat.setText(itemFatString);
                 Protein.setText(itemProteinString);
-                FoodGroup.setText(itemFoodGroup);
+                Sodium.setText(itemSodiumString);
+                Sugar.setText(itemSugarString);
             }
         });
         mGraphsButton.setOnClickListener(new View.OnClickListener() {
@@ -349,7 +358,9 @@ public class MainActivity extends AppCompatActivity {
         Carbs.setText(itemCarbs + " g");
         Fat.setText(itemFat + " g");
         Protein.setText(itemProtein + " g");
-        FoodGroup.setText(itemFoodGroup);
+        Sodium.setText(itemSodium + " mg");
+        Sugar.setText(itemSugar + " g");
+        //FoodGroup.setText(itemFoodGroup);
     }
 
     static final int REQUEST_TAKE_PHOTO = 1;

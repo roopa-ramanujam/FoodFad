@@ -126,7 +126,12 @@
 
             <TextView
 
-                android:text="Food Group"
+                android:text="Sodium"
+                android:textStyle="bold"
+                android:typeface="serif"></TextView>
+            <TextView
+
+                android:text="Sugar"
                 android:textStyle="bold"
                 android:typeface="serif"></TextView>
         </TableRow>
@@ -159,9 +164,12 @@
                 android:id="@+id/Fat"
                 android:gravity="center_horizontal"
                 android:text=""></TextView>
-
             <TextView
-                android:id="@+id/FoodGroup"
+                android:id="@+id/Sodium"
+                android:gravity="center_horizontal"
+                android:text=""></TextView>
+            <TextView
+                android:id="@+id/Sugar"
                 android:gravity="center_horizontal"
                 android:text=""></TextView>
         </TableRow>
